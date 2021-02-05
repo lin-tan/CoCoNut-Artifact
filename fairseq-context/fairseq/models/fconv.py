@@ -18,7 +18,7 @@ from fairseq.modules import (
 
 from . import (
     FairseqEncoder, FairseqIncrementalDecoder, FairseqModel,
-    FairseqLanguageModel, FairseqContextModel, register_model, 
+    FairseqLanguageModel, FairseqContextModel, register_model,
     register_model_architecture,
 )
 
@@ -108,15 +108,15 @@ class FConvModel(FairseqModel):
             share_embed=args.share_input_output_embed,
         )
         return FConvModel(encoder, decoder)
-      
+
 
 @register_model('fconv_context')
 class FConvContextModel(FairseqContextModel):
-  
+
     def __init__(self, encoder, decoder):
         super().__init__(encoder, decoder)
         self.encoder.set_num_attention_layers(sum(layer is not None for layer in decoder.attention))
-        
+
     @staticmethod
     def add_args(parser):
         """Add model-specific arguments to the parser."""
@@ -142,7 +142,7 @@ class FConvContextModel(FairseqContextModel):
                             help='share input and output embeddings (requires'
                                  ' --decoder-out-embed-dim and --decoder-embed-dim'
                                  ' to be equal)')
-        
+
     @classmethod
     def build_model(cls, args, task):
         base_architecture(args)
@@ -402,10 +402,10 @@ class FConvEncoder(FairseqEncoder):
     def max_positions(self):
         """Maximum input length supported by the encoder."""
         return self.embed_positions.max_positions()
-      
+
 
 class FConvContextEncoder(FairseqEncoder):
-  
+
     def __init__(
             self, dictionary, embed_dim=512, embed_dict=None, max_positions=1024,
             convolutions=((512, 3),) * 20, dropout=0.1, left_pad=True,
@@ -413,24 +413,26 @@ class FConvContextEncoder(FairseqEncoder):
         super(FConvContextEncoder,self).__init__(dictionary)
         self.input_encoder = FConvEncoder(dictionary,embed_dim,embed_dict,max_positions,convolutions,dropout,left_pad)
         self.context_encoder = FConvEncoder(dictionary,embed_dim,embed_dict,max_positions,convolutions,dropout,left_pad)
-        
+
     def set_num_attention_layers(self, num_attention_layers):
         self.input_encoder.num_attention_layers = num_attention_layers
         self.context_encoder.num_attention_layers = num_attention_layers
-        
+
     def forward(self, src_tokens, src_lengths, ctx_tokens, ctx_lengths):
         src_output = self.input_encoder.forward(src_tokens,src_lengths)
-        ctx_output = self.context_encoder.forward(src_tokens,src_lengths)
+        ctx_output = self.context_encoder.forward(ctx_tokens, ctx_lengths)
         if src_output['encoder_padding_mask'] is None or ctx_output['encoder_padding_mask'] is None:
             encoder_padding_mask = None
         else:
-            encoder_padding_mask = src_output['encoder_padding_mask']*ctx_output['encoder_padding_mask']
+            encoder_padding_mask = torch.cat([src_output['encoder_padding_mask'],ctx_output['encoder_padding_mask']], 1 )
+
+            #encoder_padding_mask = src_output['encoder_padding_mask']*ctx_output['encoder_padding_mask']
         return {
-          'encoder_out': (torch.cat([src_output['encoder_out'][0],ctx_output['encoder_out'][0]],2),
-                          torch.cat([src_output['encoder_out'][1],ctx_output['encoder_out'][1]],2)),
+          'encoder_out': (torch.cat([src_output['encoder_out'][0],ctx_output['encoder_out'][0]],1),
+                          torch.cat([src_output['encoder_out'][1],ctx_output['encoder_out'][1]],1)),
           'encoder_padding_mask': encoder_padding_mask
         }
-   
+
     def reorder_encoder_out(self, encoder_out, new_order):
         if encoder_out['encoder_out'] is not None:
             encoder_out['encoder_out'] = (
@@ -441,21 +443,27 @@ class FConvContextEncoder(FairseqEncoder):
             encoder_out['encoder_padding_mask'] = \
                 encoder_out['encoder_padding_mask'].index_select(0, new_order)
         return encoder_out
-    
+
     def max_positions(self):
         return max(self.input_encoder.max_positions(),self.context_encoder.max_positions())
+
 
 class AttentionLayer(nn.Module):
     def __init__(self, conv_channels, embed_dim, bmm=None, use_context=False):
         super().__init__()
         # projects from output of convolution to embedding dimension
         self.in_projection = Linear(conv_channels, embed_dim)
+        if use_context:
+            self.in_projection = linear(conv_channels, embed_dim)
+
         # projects from embedding dimension to convolution size
         self.out_projection = Linear(embed_dim, conv_channels)
-
         if use_context:
-            self.double_projection = Linear(embed_dim,2*embed_dim)
-            self.half_projection = Linear(2*embed_dim,embed_dim)
+            self.out_projection = linear(embed_dim, conv_channels)
+
+        #if use_context:
+        #    self.double_projection = Linear(embed_dim,2*embed_dim)
+        #    self.half_projection = Linear(2*embed_dim,embed_dim)
 
         self.bmm = bmm if bmm is not None else torch.bmm
         self.use_context = use_context
@@ -465,8 +473,8 @@ class AttentionLayer(nn.Module):
 
         # attention
         x = (self.in_projection(x) + target_embedding) * math.sqrt(0.5)
-        if self.use_context:
-             x = self.double_projection(x)
+        #if self.use_context:
+        #     x = self.double_projection(x)
         x = self.bmm(x, encoder_out[0])
 
         # don't attend over padding
@@ -494,8 +502,8 @@ class AttentionLayer(nn.Module):
             x = x * (s * s.rsqrt())
 
         # project back
-        if self.use_context:
-            x = self.half_projection(x)
+        #if self.use_context:
+        #    x = self.half_projection(x)
         x = (self.out_projection(x) + residual) * math.sqrt(0.5)
         return x, attn_scores
 
@@ -875,3 +883,11 @@ def fconv_wmt_en_fr(args):
 @register_model_architecture('fconv_context','fconv_context')
 def base_fconv_context(args):
     base_architecture(args)
+
+
+def linear(in_features, out_features, dropout=0.):
+    """Weight-normalized Linear layer (input: N x T x C)"""
+    m = nn.Linear(in_features, out_features)
+    m.weight.data.normal_(mean=0, std=math.sqrt((1 - dropout) / in_features))
+    m.bias.data.zero_()
+    return m
