@@ -10,11 +10,14 @@ Translate pre-processed data with a trained model.
 """
 
 import torch
-
+import numpy as np
 from fairseq import bleu, data, options, progress_bar, tasks, tokenizer, utils
 from fairseq.meters import StopwatchMeter, TimeMeter
 from fairseq.sequence_generator import SequenceGenerator
 from fairseq.sequence_scorer import SequenceScorer
+import matplotlib.pyplot as plt
+from torchvision.utils import save_image
+
 
 
 def main(args):
@@ -142,10 +145,63 @@ def main(args):
                     ))
 
                     if args.print_alignment:
-                        print('A-{}\t{}'.format(
-                            sample_id,
-                            ' '.join(map(lambda x: str(utils.item(x)), alignment))
-                        ))
+                        try:
+                            if hypo_str == target_str:
+                                fig, ax = plt.subplots()
+                                attention = hypo['attention']
+                                n_attention = attention.cpu().numpy()
+                                print("n_attention:")
+                                print(n_attention)
+                                #x_values = ['']
+                                x_values = hypo_str.split(' ')
+                                y_values = src_str.split(' ')
+                                x_values.append('EOS')
+                                y_values.append('EOS')
+                                try:
+                                    assert(len(y_values) == attention.size()[0])
+                                    assert(len(x_values) == attention.size()[1])
+                                except:
+                                    print("ERROR")
+                                    print(y_values)
+                                    print(x_values)
+                                    print(attention.size()[0])
+                                    print(attention.size()[1])
+                                    plt.close(fig)
+                                    continue
+                                #plt.yticks(y_values)
+                                #plt.xticks(x_values)
+                                rows = np.array(y_values, dtype='|S50')[:, np.newaxis]
+
+                                #with open('/local/tlutelli/heat-{}-{}.csv'.format(sample_id,i)) as f:
+                                #    np.savetxt(f, np.hstack((rows, n_attention)), delimiter=",", header=x_values)
+
+                                im = ax.imshow(n_attention, cmap='coolwarm', interpolation='nearest')
+                                ax.set_xticks(np.arange(len(x_values)))
+                                ax.set_yticks(np.arange(len(y_values)))
+                                ax.xaxis.set_tick_params(labelsize=3)
+                                ax.yaxis.set_tick_params(labelsize=3)
+                                ax.set_xticklabels(x_values)
+                                ax.set_yticklabels(y_values)
+                                ax.xaxis.tick_top()
+                                ax.set_xlabel('Generated fix')
+                                ax.xaxis.set_label_position('top')
+                                ax.set_ylabel("Input buggy line")
+                                #plt.xlabel("Generated fix")
+                                #plt.ylabel("Input buggy line")
+                                plt.colorbar(im)
+                                plt.setp(ax.get_xticklabels(), rotation=45, ha="left", rotation_mode="anchor")
+                                if len(x_values) <= 15 and len(y_values) <= 15:
+                                    for y in range(len(y_values)):
+                                        for x in range(len(x_values)):
+                                            if n_attention[y,x].round(decimals=1) != 0.0:
+                                                text = ax.text(x,y, n_attention[y, x].round(decimals=1), ha="center", va="center")# color="b")
+                                fig.tight_layout()
+                                plt.savefig('/local/tlutelli/attention_maps/context_heat-{}-{}.png'.format(sample_id,i), dpi=900)
+                                plt.close(fig)
+                                print('ATTENTION-{}\t{}'.format(sample_id, n_attention))
+                        except:
+                            continue
+                        print('A-{}\t{}'.format(sample_id, ' '.join(map(lambda x: str(utils.item(x)), alignment))))
 
                 # Score only the top hypothesis
                 if has_target and i == 0:

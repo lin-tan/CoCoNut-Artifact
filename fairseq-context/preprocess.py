@@ -224,7 +224,7 @@ def main(args):
                 os.remove(indexed_dataset.index_file_path(temp_file_path))
 
         ds.finalize(dataset_dest_file(args, output_prefix, lang, "idx"))
-
+        '''
         print(
             "| [{}] {}: {} sents, {} tokens, {:.3}% replaced by {}".format(
                 lang,
@@ -235,6 +235,7 @@ def main(args):
                 dict.unk_word,
             )
         )
+        '''
 
     def make_dataset(input_prefix, output_prefix, lang, num_workers=1):
         if args.output_format == "binary":

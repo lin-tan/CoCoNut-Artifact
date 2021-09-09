@@ -29,7 +29,7 @@ def collate(
     id = torch.LongTensor([s['id'] for s in samples])
     src_tokens = merge('source', left_pad=left_pad_source)
     ctx_tokens = merge('context', left_pad=left_pad_source)
-    
+
     # sort by descending source length
     src_lengths = torch.LongTensor([s['source'].numel() for s in samples])
     ctx_lengths = torch.LongTensor([s['context'].numel() for s in samples])
@@ -117,7 +117,7 @@ class LanguagePairWithContextDataset(LanguagePairDataset):
             ctx_item = src_item[(i+1):]
             src_item = src_item[:i]
             break
-        
+
         # Append EOS to end of tgt sentence if it does not have an EOS and remove
         # EOS from end of src sentence if it exists. This is useful when we use
         # use existing datasets for opposite directions i.e., when we want to
@@ -174,7 +174,7 @@ class LanguagePairWithContextDataset(LanguagePairDataset):
                   on the left if *left_pad_target* is ``True``.
         """
         return collate(
-            samples, pad_idx=self.src_dict.pad(), eos_idx=self.src_dict.eos(), 
+            samples, pad_idx=self.src_dict.pad(), eos_idx=self.src_dict.eos(),
             left_pad_source=self.left_pad_source, left_pad_target=self.left_pad_target,
             input_feeding=self.input_feeding,
         )
