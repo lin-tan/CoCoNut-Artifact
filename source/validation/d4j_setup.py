@@ -35,7 +35,7 @@ def clean_temp_folder_bak(temp_dir):
 
 def load_defects4j_project(project, bug_id, temp_dir):
     FNULL = open(os.devnull, 'w')
-    command = "/local/tlutelli/defects4j/framework/bin/defects4j " + " checkout " + " -p " + project + " -v " + bug_id + " -w " + temp_dir
+    command = "/local/mydir/defects4j/framework/bin/defects4j " + " checkout " + " -p " + project + " -v " + bug_id + " -w " + temp_dir
     print(command)
     p = subprocess.Popen([command], shell=True, stdout=FNULL, stderr=FNULL)
     p.wait()

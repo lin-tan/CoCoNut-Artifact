@@ -5,7 +5,7 @@ import subprocess
 import types
 import os
 
-INIT_DIR = "/home/tlutelli/workspace/coconut/"
+INIT_DIR = "/home/mydir/workspace/coconut/"
 
 
 def prettyprint(o):

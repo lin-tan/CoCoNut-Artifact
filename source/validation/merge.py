@@ -75,7 +75,7 @@ def merge():
     for result in all_coconut:
         if current_patch != result.id:
             current_patch = result.id
-            fout = open('/local1/tlutelli/all_results/quixpy/' +
+            fout = open('/local1/mydir/all_results/quixpy/' +
                         current_patch.replace(" ", "").replace('\n', '').replace('/', '.') +
                         '_COCONUT_PERFECT_LOC.txt','w')
             count = 0

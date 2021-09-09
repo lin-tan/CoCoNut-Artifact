@@ -26,7 +26,7 @@ def command(cmd, timeout=250):
 
 def compile_fix(temp_folder):
     os.chdir(temp_folder)
-    p = subprocess.Popen(["/local/tlutelli/defects4j/framework/bin/defects4j", "compile"],
+    p = subprocess.Popen(["/local/mydir/defects4j/framework/bin/defects4j", "compile"],
                          stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     out, err = p.communicate()
     if "FAIL" in str(err) or "FAIL" in str(out):
@@ -38,21 +38,21 @@ def compile_fix(temp_folder):
 
 def defects4j_test_suite(temp_folder, timeout=250):
     os.chdir(temp_folder)
-    out, err = command(["/local/tlutelli/defects4j/framework/bin/defects4j", "test", "-r"],
+    out, err = command(["/local/mydir/defects4j/framework/bin/defects4j", "test", "-r"],
                        timeout)
     return out, err
 
 
 def defects4j_trigger(temp_folder, timeout=250):
     os.chdir(temp_folder)
-    out, err = command(["/local/tlutelli/defects4j/framework/bin/defects4j", "export", "-p", "tests.trigger"],
+    out, err = command(["/local/mydir/defects4j/framework/bin/defects4j", "export", "-p", "tests.trigger"],
                        timeout)
     return out, err
 
 
 def defects4j_test_one(temp_folder, test_case, timeout=250):
     os.chdir(temp_folder)
-    out, err = command(["/local/tlutelli//defects4j/framework/bin/defects4j", "test", "-t", test_case],
+    out, err = command(["/local/mydir//defects4j/framework/bin/defects4j", "test", "-t", test_case],
                        timeout)
     return out, err
 

@@ -167,8 +167,8 @@ def read_result_file(inputs):
     start = time.time()
     result_file = inputs[0]
     init_temp_dir = inputs[1]
-    quixbug_dir = '/local1/tlutelli/all_results/quixpy/QuixBugs/java_programs_bak/'
-    shutil.copytree('/local1/tlutelli/all_results/quixpy/QuixBugs/', init_temp_dir)
+    quixbug_dir = '/local1/mydir/all_results/quixpy/QuixBugs/java_programs_bak/'
+    shutil.copytree('/local1/mydir/all_results/quixpy/QuixBugs/', init_temp_dir)
     temp_folder = init_temp_dir + '/java_programs/'
     current_meta = ""
     with open(result_file, 'r') as fin:
@@ -251,7 +251,7 @@ def main():
     for (dirpath, dirnames, filenames) in os.walk('./intermediate_repo_good/java/2006/merged_quixjava/'):
         for filename in filenames:
             if any(x in filename for x in ["TOPOLOGICAL_ORDERING"]):
-                all_args.append([dirpath + filename, '/local1/tlutelli/temp_QUIXBUG/' + filename + '/quixbugs/'])
+                all_args.append([dirpath + filename, '/local1/mydir/temp_QUIXBUG/' + filename + '/quixbugs/'])
     print("command")
     pool = mp.Pool(10)
     result = pool.map(read_result_file, all_args)

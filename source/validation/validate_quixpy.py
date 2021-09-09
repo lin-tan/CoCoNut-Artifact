@@ -150,8 +150,8 @@ def insert_fix_quixbugs(file, loc, patch, temp_dir):
     return temp_file + '.bak'
 
 fout = open("quixpy_log_correct_context.log", 'w')
-temp_dir = "/local/tlutelli/all_results/quixpy/temp/"
-quixdir = "/local/tlutelli/all_results/quixpy/QuixBugs/"
+temp_dir = "/local/mydir/all_results/quixpy/temp/"
+quixdir = "/local/mydir/all_results/quixpy/QuixBugs/"
 all_data = merge()
 all_data.sort(key=lambda x: (x.id, x.rank, -x.score))
 current_meta = ""
