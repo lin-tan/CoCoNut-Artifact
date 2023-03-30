@@ -236,6 +236,38 @@ def token2statement(token_list, numbers, strings):
                     for s in range(0, len(statements)):
                         statements[s] += token + " "
         else:  # no space after the last statement
-            for s in range(0, len(statements)):
-                statements[s] += token
+            if token_list[i] == "$STRING$":
+                if flag_string_statements == 3:
+                    for s in range(0, len(statements)):
+                        if "'" not in strings[s % len(strings)]:
+                            statements[s] += "'" + strings[s % len(strings)] + "'"
+                        else:
+                            statements[s] += '"' + strings[s % len(strings)] + '"'
+                elif flag_string_statements == 1:
+                    for s in range(0, len(statements)):
+                        if "'" not in strings[s]:
+                            statements[s] += "'" + strings[s] + "'"
+                        else:
+                            statements[s] += '"' + strings[s] + '"'
+                else:
+                    for s in range(0, len(statements)):
+                        statements[s] += "'DEFAULT'"
+            elif token_list[i] == "$NUMBER$":
+                if flag_string_statements == 3:
+                    count = 0
+                    for s in range(0, len(numbers)):
+                        for stringlen in range(s, s + len(strings)):
+                            statements[count] += numbers[s]
+                            count += 1
+                elif flag_string_statements == 2:
+                    for s in range(0, len(statements)):
+                        statements[s] += numbers[s]
+                else:
+                    # use default number 2 (0 and 1 are specific tokens)
+                    statements[s] += 2
+            elif token_list[i] == "CaMeL":  # no space
+                pass
+            else:
+                for s in range(0, len(statements)):
+                    statements[s] += token
     return statements
